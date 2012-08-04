@@ -2,9 +2,8 @@
 // "The Elements of Computing Systems" by Nisan and Schocken, 
 // MIT Press. Book site: www.idc.ac.il/tecs
 // File name: projects/01/DMux.hdl
-
 /**
- * Dmultiplexor.  
+ * Dmultiplexor.
  * {a,b} = {in,0} if sel==0
  *         {0,in} if sel==1
  */
@@ -15,5 +14,8 @@ CHIP DMux {
     OUT a, b;
 
     PARTS:
-    // Put your code here.
+    Not(in=sel, out=notsel);
+    And(a=in, b=notsel, out=a);
+    And(a=in, b=sel, out=b);
 }
+
