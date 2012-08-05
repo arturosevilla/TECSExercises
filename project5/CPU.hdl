@@ -39,5 +39,51 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
      PARTS:
-    // Put your code here.
+
+     // Instruction decoding
+
+     // store decoding
+     // we store in memory only if it is a C-instruction and instr[3] = 1
+     And(a=instruction[3], b=instruction[15], out=writeM);
+
+     // we store in A if it is an A-instruction or instr[5] = 1
+     Not(in=instruction[15], out=isAinstr);
+     Or(a=isAinstr, b=instruction[5], out=storeA);
+
+     // we store in D only if it is a C-instruction and instr[4] = 1
+     And(a=instruction[4], b=instruction[15], out=storeD);
+
+     // jump decision only for C-instructions
+     And(a=instruction[15], b=instruction[0], out=j3);
+     And(a=instruction[15], b=instruction[1], out=j2);
+     And(a=instruction[15], b=instruction[2], out=j1);
+
+     // Instruction fetching
+     Not(in=aluNeg, out=aluPos);
+     And(a=j3, b=aluPos, out=jgt);
+     And(a=j2, b=aluZero, out=jeq);
+     And(a=j1, b=aluNeg, out=jlt);
+
+     Or(a=jgt, b=jeq, out=jgeq);
+     Or(a=jgeq, b=jlt, out=storePC);
+     Not(in=reset, out=incPC);
+
+
+     // CPU Architecture (instruction execution)
+
+     Mux16(a[0..14]=instruction[0..14], a[15]=false, b=outALU,
+           sel=instruction[15], out=multA);
+     
+     ARegister(in=multA, load=storeA, out=outA, out[0..14]=addressM);
+
+     Mux16(a=outA, b=inM, sel=instruction[12], out=valueAM);
+
+     DRegister(in=outALU, load=storeD, out=outD);
+
+     PC(in=outA, reset=reset, load=storePC, inc=incPC, out[0..14]=pc);
+
+     ALU(x=outD, y=valueAM, zx=instruction[11], nx=instruction[10],
+         zy=instruction[9], ny=instruction[8], f=instruction[7],
+         no=instruction[6], out=outALU, out=outM, zr=aluZero, ng=aluNeg);
 }
+
